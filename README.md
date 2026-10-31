@@ -34,3 +34,11 @@ Support desk. Decision records: whoever signed them.
 ---
 
 Exported 2026-10-04 from the `support` repo, `apps/kb/` → `src/`.
+
+## Added here: #4471, split by problem
+
+- The page: `src/routes/kb/incidents/4471/problems/+page.svx` (signed, desk ref at the bottom),
+  with its logic in `src/lib/kb/problems.ts` and `src/lib/kb/ProblemTable.svelte`.
+- The page as the desk sees it: `rendered/kb/incidents/4471/problems.html` (static build of this
+  kb, `npm install && npm run build`) and a screenshot, `rendered/problems.png`.
+- One ticket per problem: the issues of this repo.

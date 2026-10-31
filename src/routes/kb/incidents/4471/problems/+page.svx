@@ -1,0 +1,90 @@
+---
+layout: runbook
+title: '#4471 · three problems, one ticket'
+owner: Paulina Pogorzelska
+status: open
+reviewed: 2026-10-31
+signature: Paulina Pogorzelska
+---
+
+<script>
+  import ProblemTable from '#lib/kb/ProblemTable.svelte';
+  import CauseTable from '#lib/kb/CauseTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+
+  const REPO = 'https://github.com/PogorzelskaPaulina/support-kb-4471/issues/';
+  const tickets = {
+    parser: { label: 'issue #1', href: REPO + '1' },
+    hint: { label: 'issue #2', href: REPO + '2' },
+    'one-day': { label: 'issue #3', href: REPO + '3' },
+  };
+</script>
+
+[#4471](/kb/incidents/4471) says: one issue, one fix queued. Its reports say something else.
+Every report in it is about a booking on the wrong day, so it was merged by
+[subject](/kb/triage/dedupe). Read by what the date did and where it came from, the reports fall
+into separate problems. Each needs its own fix, and the fix queued for #4471 closes only one of them.
+
+<Callout kind="warn">
+Not one issue. Fixing the parser leaves the booking-v3 form hint and the one-day moves open.
+Each problem now has its own ticket.
+</Callout>
+
+## What #4471 holds
+
+<ProblemTable ticket={4471} {tickets} />
+
+The counts are built from the ticket export at render time: duplicate rows from overlapping
+export pages are counted once, each report is placed by its tenant (locale and booking form,
+`#lib/kb/causes`), and the reports the desk read as a one-day move (`desk-notes.json`) are taken
+out of `parser` (`#lib/kb/problems`).
+
+## The problems
+
+### `parser`: the shared parser reads month first
+
+Every tenant on file writes the day first. The shared parser reads every date month first, so a
+date whose day is 12 or lower comes out with day and month swapped: "Our 7 April reminder went
+out on 4 July" (R-41200). This is the fix #4471 already has queued. It covers reports from the
+app and email channels for every tenant, and from the form for tenants on booking-v2.
+
+### `hint`: the booking-v3 form tells day-first tenants to type month first
+
+Tenants on booking-v3 show `MM/DD/YYYY` under the date field. Their people type what the hint
+says, and the form reads it the tenant's way, day first. The result looks the same as `parser`
+(a swapped day and month), but the parser is not involved: the fix is the hint (and the field's
+input order) following the tenant's locale. Only reports through the form at booking-v3 tenants
+land here. [CauseTable](/kb/incidents/4471) already shows this group as "not this ticket — no
+ticket of its own".
+
+### `one-day`: the date moves by one day
+
+These reports have no swap: "Invite says Tuesday 12 May. Calendar says Monday 11 May" (R-41202),
+"Client in Lisbon got Tuesday. Client in Toronto got Monday. Same meeting" (R-41344), "Every
+booking in June is one day off" (R-41209). A day that moves by one looks like a time-zone or
+daylight-saving problem in how invites are sent, not a parsing one. The desk had read these
+apart (`oneDayMove`), but the #4471 table still counts them under `parser`, so a parser fix
+would have been expected to close them.
+
+## Intake tags are not the cause
+
+Intake tags each report from the reporter's browser. The tenant decides the cause, not the
+browser: the notes under the table count how many reports intake tagged as the other cause. Do
+not triage these problems by tag.
+
+## The table on #4471, for comparison
+
+<CauseTable ticket={4471} />
+
+## What changes
+
+- Each problem is tracked in its own ticket (linked in the table), with its own count. The fix
+  queued for #4471 belongs to `parser`; `hint` and `one-day` need fixes of their own.
+- New reports about a wrong date: read the body. A swapped day and month through a booking-v3
+  form is `hint`; a date one day off is `one-day`; the rest is `parser`.
+- [Decision 0001](/kb/decisions/0001-dedupe-by-subject) accepted that reports with different
+  subjects may end up apart. #4471 shows the other side: reports with the same subjects and
+  different bugs end up together.
+
+<RenderStamp {signature} />
