@@ -1,7 +1,7 @@
 <script lang="ts">
   import reports from '#lib/data/reports-4471.json';
   import notes from '#lib/data/desk-notes.json';
-  import { groupByProblem, mistagged, type Problem } from '#lib/kb/problems';
+  import { groupByProblem, type Problem } from '#lib/kb/problems';
   import { tenantOf } from '#lib/kb/locales';
   import type { Report } from '#lib/kb/causes';
 
@@ -11,9 +11,8 @@
 
   const split = $derived(groupByProblem(reports as Report[], ticket, tenantOf, notes.oneDayMove));
   const WHAT: Record<string, string> = {
-    parser: 'day and month swap: the shared parser reads month first',
-    hint: 'day and month swap: the booking-v3 form hint says MM/DD/YYYY',
-    'one-day': 'the date moves by one day: no swap',
+    swap: 'day and month swap places',
+    'one-day': 'the date moves by one day, no swap',
     unplaced: 'no tenant on file',
   };
   const list = (c: Record<string, number>) =>
@@ -31,7 +30,7 @@
 
 <table>
   <thead>
-    <tr><th>problem</th><th>reports</th><th>what the reports show</th><th>tenants</th><th>channels</th><th>seen</th><th>ticket</th></tr>
+    <tr><th>problem</th><th>reports</th><th>what the reports show</th><th>tenants</th><th>channels</th><th>CauseTable calls them</th><th>seen</th><th>ticket</th></tr>
   </thead>
   <tbody>
     {#each split.groups as g (g.problem)}
@@ -41,6 +40,7 @@
         <td>{WHAT[g.problem]}</td>
         <td class="small">{g.tenants.length === 11 ? 'all 11' : g.tenants.join(', ')}</td>
         <td class="small">{list(g.channels)}</td>
+        <td class="small">{list(g.causes)}</td>
         <td class="small">{g.firstSeen} → {g.lastSeen}</td>
         <td>
           {#if tickets[g.problem as Problem]}
@@ -54,16 +54,8 @@
   </tbody>
 </table>
 
-{#each split.groups as g (g.problem)}
-  {@const n = mistagged(g)}
-  {#if n}
-    <p class="note"><code>{g.problem}</code>: intake tagged {n} of these {g.reports.length} reports as the other cause.</p>
-  {/if}
-{/each}
-
 <style>
   .sum { font-size: 1.1rem; }
   .small { color: var(--muted); font-size: 0.85em; }
   .none { color: var(--warn); font-weight: 600; }
-  .note { color: var(--muted); font-size: 0.85em; margin: 0.2rem 0; }
 </style>

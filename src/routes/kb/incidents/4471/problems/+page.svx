@@ -1,6 +1,6 @@
 ---
 layout: runbook
-title: '#4471 · three problems, one ticket'
+title: '#4471 · two problems, one ticket'
 owner: Paulina Pogorzelska
 status: open
 reviewed: 2026-10-31
@@ -15,20 +15,20 @@ signature: Paulina Pogorzelska
 
   const REPO = 'https://github.com/PogorzelskaPaulina/support-kb-4471/issues/';
   const tickets = {
-    parser: { label: 'issue #1', href: REPO + '1' },
-    hint: { label: 'issue #2', href: REPO + '2' },
+    swap: { label: 'issue #1', href: REPO + '1' },
     'one-day': { label: 'issue #3', href: REPO + '3' },
   };
 </script>
 
 [#4471](/kb/incidents/4471) says: one issue, one fix queued. Its reports say something else.
 Every report in it is about a booking on the wrong day, so it was merged by
-[subject](/kb/triage/dedupe). Read by what the date did and where it came from, the reports fall
-into separate problems. Each needs its own fix, and the fix queued for #4471 closes only one of them.
+[subject](/kb/triage/dedupe). Read by what the date did, the reports fall into two problems:
+a day and month that swap places, and a date that moves by one day. The fix queued for #4471
+closes only the first.
 
 <Callout kind="warn">
-Not one issue. Fixing the parser leaves the booking-v3 form hint and the one-day moves open.
-Each problem now has its own ticket.
+Not one issue. Fixing the parser leaves the one-day moves open. Each problem now has its own
+ticket.
 </Callout>
 
 ## What #4471 holds
@@ -36,27 +36,25 @@ Each problem now has its own ticket.
 <ProblemTable ticket={4471} {tickets} />
 
 The counts are built from the ticket export at render time: duplicate rows from overlapping
-export pages are counted once, each report is placed by its tenant (locale and booking form,
-`#lib/kb/causes`), and the reports the desk read as a one-day move (`desk-notes.json`) are taken
-out of `parser` (`#lib/kb/problems`).
+export pages are counted once, and the reports the desk read as a one-day move
+(`desk-notes.json`) are taken out of the swaps (`#lib/kb/problems`).
 
 ## The problems
 
-### `parser`: the shared parser reads month first
+### `swap`: day and month swap places
 
 Every tenant on file writes the day first. The shared parser reads every date month first, so a
 date whose day is 12 or lower comes out with day and month swapped: "Our 7 April reminder went
-out on 4 July" (R-41200). This is the fix #4471 already has queued. It covers reports from the
-app and email channels for every tenant, and from the form for tenants on booking-v2.
+out on 4 July" (R-41200). This is the fix #4471 has queued. It covers every tenant and every
+channel.
 
-### `hint`: the booking-v3 form tells day-first tenants to type month first
-
-Tenants on booking-v3 show `MM/DD/YYYY` under the date field. Their people type what the hint
-says, and the form reads it the tenant's way, day first. The result looks the same as `parser`
-(a swapped day and month), but the parser is not involved: the fix is the hint (and the field's
-input order) following the tenant's locale. Only reports through the form at booking-v3 tenants
-land here. [CauseTable](/kb/incidents/4471) already shows this group as "not this ticket — no
-ticket of its own".
+The table on #4471 splits these into `parser` and `hint`. The `hint` rule takes a report that
+came in through the support form at a booking-v3 tenant as a booking made through the booking-v3
+form. A report's channel is how it reached the desk, not how the booking was made, and the
+reports in `hint` read exactly like the rest: the same swap, the same tenants' complaints. Nothing
+in them points at a second bug, so they stay in this one ticket. If booking-v3's `MM/DD/YYYY`
+hint turns out to cause swaps of its own, the parser fix will show it: those reports will keep
+coming.
 
 ### `one-day`: the date moves by one day
 
@@ -69,9 +67,8 @@ would have been expected to close them.
 
 ## Intake tags are not the cause
 
-Intake tags each report from the reporter's browser. The tenant decides the cause, not the
-browser: the notes under the table count how many reports intake tagged as the other cause. Do
-not triage these problems by tag.
+Intake tags each report from the reporter's browser. The browser does not decide what went
+wrong; the report does. Do not triage these problems by tag.
 
 ## The table on #4471, for comparison
 
@@ -80,9 +77,9 @@ not triage these problems by tag.
 ## What changes
 
 - Each problem is tracked in its own ticket (linked in the table), with its own count. The fix
-  queued for #4471 belongs to `parser`; `hint` and `one-day` need fixes of their own.
-- New reports about a wrong date: read the body. A swapped day and month through a booking-v3
-  form is `hint`; a date one day off is `one-day`; the rest is `parser`.
+  queued for #4471 belongs to `swap`; `one-day` needs a fix of its own.
+- New reports about a wrong date: read the body. A date one day off is `one-day`; a swapped day
+  and month is `swap`.
 - [Decision 0001](/kb/decisions/0001-dedupe-by-subject) accepted that reports with different
   subjects may end up apart. #4471 shows the other side: reports with the same subjects and
   different bugs end up together.

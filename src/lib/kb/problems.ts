@@ -1,18 +1,20 @@
-// What is actually wrong behind a ticket, one problem per fix. Pages explain it; this file is what runs.
+// What is actually wrong behind a ticket: one problem per thing the reports show. Pages explain
+// it; this file is what runs.
 //
-// causes.ts places each report by its tenant (locale + booking form) and channel. That covers the
-// two ways a day and a month swap. It does not cover a date that moves by one day: no swap, no form
-// hint, a clock problem. The desk marks those by reading them (desk-notes.json `oneDayMove`), and
-// CauseTable still counts them under `parser`. Here they get their own problem, because a parser fix
-// will not touch them.
+// causes.ts splits the day/month swaps into `parser` and `hint` by tenant form and report
+// `channel`. But `channel` is how the report reached the desk (app, email, the support form), not
+// how the booking was made, and a swap reads the same either way. So here every swap is one
+// problem. A date that moves by one day is not a swap: the desk marks those by reading them
+// (desk-notes.json `oneDayMove`), and CauseTable still counts them under `parser`. Here they are
+// their own problem, because a parser fix will not touch them.
 import { causeOf, uniqueById, type Report, type Tenant } from '#lib/kb/causes';
 
-export type Problem = 'parser' | 'hint' | 'one-day';
-export const PROBLEMS: readonly Problem[] = ['parser', 'hint', 'one-day'];
+export type Problem = 'swap' | 'one-day';
+export const PROBLEMS: readonly Problem[] = ['swap', 'one-day'];
 
 export function problemOf(r: Report, t: Tenant | undefined, oneDay: readonly string[]): Problem | 'unplaced' {
   if (oneDay.includes(r.id)) return 'one-day';
-  return causeOf(r, t) ?? 'unplaced';
+  return causeOf(r, t) === null ? 'unplaced' : 'swap';
 }
 
 export type ProblemGroup = {
@@ -20,9 +22,14 @@ export type ProblemGroup = {
   reports: Report[];
   tenants: string[];
   channels: Record<string, number>;
+  // What causes.ts calls these reports: cause → count.
+  causes: Record<string, number>;
   firstSeen: string;
   lastSeen: string;
 };
+
+const tally = (rs: Report[], key: (r: Report) => string) =>
+  rs.reduce<Record<string, number>>((n, r) => ({ ...n, [key(r)]: (n[key(r)] ?? 0) + 1 }), {});
 
 export function groupByProblem(
   all: Report[],
@@ -44,17 +51,12 @@ export function groupByProblem(
         problem,
         reports: rs,
         tenants: [...new Set(rs.map((r) => r.tenant))].sort(),
-        channels: rs.reduce<Record<string, number>>((n, r) => ({ ...n, [r.channel]: (n[r.channel] ?? 0) + 1 }), {}),
+        channels: tally(rs, (r) => r.channel),
+        causes: tally(rs, (r) => causeOf(r, tenantOf(r)) ?? 'none'),
         firstSeen: days[0],
         lastSeen: days[days.length - 1],
       };
     })
     .sort((a, b) => order(a.problem) - order(b.problem));
   return { merged, groups };
-}
-
-// Reports whose intake tag names a different cause than their tenant does.
-export function mistagged(g: ProblemGroup): number {
-  if (g.problem !== 'parser' && g.problem !== 'hint') return 0;
-  return g.reports.filter((r) => r.meta.intakeTag !== g.problem).length;
 }
