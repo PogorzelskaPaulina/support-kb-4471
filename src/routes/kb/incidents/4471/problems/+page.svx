@@ -2,9 +2,9 @@
 layout: runbook
 title: '#4471 · two problems, one ticket'
 owner: Paulina Pogorzelska
-status: open
+status: closed
 reviewed: 2026-10-31
-signature: Paulina Pogorzelska
+signature: v1.eyJzdWIiOiIxMTQ4IiwiYXVkIjoiY2hhbGxlbmdlOndoYXQtaXQtc2hvd3MiLCJpYXQiOjE3OTM0NDk2MzAsImV4cCI6MTc5MzUzNjAzMH0.KhH808uxEhM3kfmo0rcSuoz3Vi50uXO0A1j92GDaRuc
 ---
 
 <script>
@@ -14,8 +14,8 @@ signature: Paulina Pogorzelska
 
   const REPO = 'https://github.com/PogorzelskaPaulina/support-kb-4471/issues/';
   const tickets = {
-    parser: { label: 'issue #1', href: REPO + '1' },
-    hint: { label: 'issue #2', href: REPO + '2' },
+    parser: { label: 'issue #1 · fixed', href: REPO + '1' },
+    hint: { label: "issue #2 · won't fix", href: REPO + '2' },
   };
 </script>
 
@@ -36,6 +36,15 @@ own ticket.
 The counts are built from the ticket export at render time. Duplicate rows from overlapping
 export pages are counted once. Each report is placed by its tenant, the locale they write dates
 in and the booking form they run (`#lib/kb/causes`), not by its intake tag and not by its subject.
+
+## Where it stands
+
+Engineering closed #4471 on 5 October:
+
+- `parser`: **fixed**, `fix(dates): parse dd/mm for eu locales`.
+- `hint`: **won't fix**, the booking-v3 form is retired.
+
+Both tickets are closed with those outcomes.
 
 ## The problems
 
